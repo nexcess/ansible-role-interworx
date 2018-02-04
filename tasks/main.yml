@@ -51,9 +51,11 @@
   debug:
     var=goiworx_result.stdout_lines
   failed_when: true
+  set_fact: flag = "failed"
   when:
     - iw_activate_license
     - goiworx_result.rc != 0
+  ignore_errors: yes
 
 
 - name: Install Interworx CLI
