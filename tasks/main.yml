@@ -38,6 +38,11 @@
   failed_when: iworx_install_result.rc != 0
   when: iw_is_inst.rc !=0
 
+- name: Install Interworx CLI
+  package:
+    name="interworx-cli"
+    state={{ iw_cli_pkg_state }}
+
 - name: Seed /etc/hosts With Correct License IP
   lineinfile:
     path="/etc/hosts"
@@ -87,11 +92,6 @@
     group="root"
     state="link"
   when: iw_symlink_base_php
-
-- name: Install Interworx CLI
-  package:
-    name="interworx-cli"
-    state={{ iw_cli_pkg_state }}
 
 - name: Accept Interworx EULA
   ini_file:
