@@ -25,7 +25,7 @@
   when: iw_is_inst.rc != 0
 
 - name: Install Interworx
-  command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }}
+  command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m system -p system
   become: yes
   async: 1800
   register: iworx_install_result
