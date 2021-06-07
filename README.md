@@ -43,7 +43,7 @@ Default nameservers to configure with newly created Siteworx accounts (i.e. ns1.
 
 Automatically accept the Interworx EULA. Without this the first login will require acceptance.
 
-    iw_install_script_url: "interworx.com/inst.sh"
+    iw_install_script_url: "https://updates.interworx.com/iworx/scripts/iworx-cp-install.sh"
 	
 Interworx install script location.	
 
