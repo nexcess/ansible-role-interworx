@@ -29,7 +29,7 @@ iw_ns3: ""
 iw_accept_eula: true
 
 # Interworx install script url
-iw_install_script_url: 'http://interworx.com/inst.sh'
+iw_install_script_url: 'https://updates.interworx.com/iworx/scripts/iworx-cp-install.sh'
 iw_install_script_loc: '/tmp/iworx-cp-install.sh'
 
 # Custom IWorx theme

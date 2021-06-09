@@ -24,6 +24,12 @@
     dest={{ iw_install_script_loc }}
   when: iw_is_inst.rc != 0
 
+- name: Alter Interworx Installer Repo File URL
+  shell: sed -i 's#https://updates.interworx.com/iworx/yum/interworx.repo-$iworxrepo#{{ iw_alt_repo_file_url }}#' {{ iw_install_script_loc }}
+  when:
+    - iw_is_inst.rc != 0
+    - iw_use_alt_repo_file = true
+
 - name: Install Interworx
   command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m system -p system
   become: yes
