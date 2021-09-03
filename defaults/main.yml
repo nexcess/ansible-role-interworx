@@ -32,6 +32,12 @@ iw_accept_eula: true
 iw_install_script_url: 'https://updates.interworx.com/iworx/scripts/iworx-cp-install.sh'
 iw_install_script_loc: '/tmp/iworx-cp-install.sh'
 
+# Use an alternate repo file
+iw_use_alt_repo_file: false
+
+# URL to alternate repo file
+iw_alt_repo_file_url: ""
+
 # Custom IWorx theme
 iw_theme_name: ""
 iw_theme_git_repo: ""
