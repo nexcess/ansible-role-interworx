@@ -14,9 +14,6 @@
 # Original work copyright Jeff Geerling
 # Modifications done by Stephen Dunne
 
-# Exit on any individual command failure.
-set -e
-
 # Pretty colors.
 red='\033[0;31m'
 green='\033[0;32m'
@@ -31,6 +28,7 @@ cleanup=${cleanup:-"true"}
 container_id=${container_id:-$timestamp}
 test_idempotence=${test_idempotence:-"true"}
 docker_image='nexcess/ansible-role-interworx'
+retval=0
 
 ## Build docker container
 if [[ "$(docker images -q "${docker_image}:latest" 2> /dev/null)" == "" ]]; then
@@ -85,10 +83,12 @@ if [ "$test_idempotence" = true ]; then
   printf ${green}"Running playbook again: idempotence test"${neutral}
   idempotence=$(mktemp)
   docker exec $container_id ansible-playbook /etc/ansible/roles/role_under_test/tests/$playbook | tee -a $idempotence
-  tail $idempotence \
-    | grep -q 'changed=0.*failed=0' \
-    && (printf ${green}'Idempotence test: pass'${neutral}"\n") \
-    || (printf ${red}'Idempotence test: fail'${neutral}"\n" && exit 1)
+  if tail $idempotence | grep -q 'changed=0.*failed=0'; then
+    printf ${green}'Idempotence test: pass'${neutral}"\n"
+  else
+    printf ${red}'Idempotence test: fail'${neutral}"\n"
+    retval=1
+  fi
 fi
 
 # Remove the Docker container (if configured).
@@ -96,3 +96,5 @@ if [ "$cleanup" = true ]; then
   printf "Removing Docker container...\n"
   docker rm -f $container_id
 fi
+
+exit "$retval"
