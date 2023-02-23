@@ -39,8 +39,15 @@
     - iw_is_inst.rc != 0
 
 - name: Check Interworx Install Script Result
+  vars:
+    msg: |
+        iworx install return code: {{ iworx_install_result.rc }}
+        iworx install stdout:
+        {{ iworx_install_result.stdout }}
+        iworx install stderr:
+        {{ iworx_install_result.stderr }}
   debug:
-    var=iworx_install_result.stdout_lines
+    msg: "{{ msg.split('\n') }}"
   failed_when: iworx_install_result.rc != 0
   when: iw_is_inst.rc !=0
 
@@ -78,8 +85,15 @@
   when: not iw_skip_hosts_edit
 
 - name: Check Interworx License Activation Result
+  vars:
+    msg: |
+        goiworx return code: {{ goiworx_result.rc }}
+        goiworx stdout:
+        {{ goiworx_result.stdout }}
+        goiworx stderr:
+        {{ goiworx_result.stderr }}
   debug:
-    var=goiworx_result.stdout_lines
+    msg: "{{ msg.split('\n') }}"
   failed_when: true
   when: (iw_is_inst.rc != 0 and iw_activate_license and goiworx_result.rc != 0)
 
