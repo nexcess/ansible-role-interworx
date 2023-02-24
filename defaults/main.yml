@@ -69,3 +69,6 @@ iw_symlink_base_php_packages:
   - "php-pear"
 
 iw_generate_apikey: true
+
+iw_mysql_ver: "system"
+iw_php_ver: "system"

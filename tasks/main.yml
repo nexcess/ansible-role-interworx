@@ -31,7 +31,7 @@
     - iw_use_alt_repo_file
 
 - name: Install Interworx
-  command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m system -p system
+  command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m {{ iw_mysql_ver }} -p {{ iw_php_ver }}
   become: yes
   async: 1800
   register: iworx_install_result

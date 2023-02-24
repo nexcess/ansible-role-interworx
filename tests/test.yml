@@ -5,6 +5,8 @@
     iw_master_email: 'citests@nexcess.net'
     iw_master_password: 'nexcesscitests'
     iw_license_key: 'NEXCESS_CI_LICENSE'
+    iw_mysql_ver: "10.6"
+    iw_php_ver: "7.3"
 
   pre_tasks:
     - name: ensure /etc/sysconfig/network file
