@@ -192,10 +192,20 @@
   when:
     - iw_activate_license
 
+- name: Check for existing API key
+  shell: >
+    nodeworx -un -c Apikey -a listApikey
+  changed_when: false
+  register: listapikey_result
+  tags:
+    - apikey
+
 - name: Generate API Key
   shell: >
     nodeworx -un -c Apikey -a generate
-  when: iw_generate_apikey
+  when: iw_generate_apikey and 'INTERWORX API KEY' not in listapikey_result.stdout
+  tags:
+    - apikey
 
 - include: theme.yml
   when:
