@@ -1,20 +1,20 @@
-
+---
 - name: Get Theme
   git:
-    force="yes"
-    depth="1"
-    repo="{{ iw_theme_git_repo }}"
-    version="{{ iw_theme_git_version | default('master') }}"
-    dest="{{ iw_theme_tmp_dir }}"
+    force: "yes"
+    depth: "1"
+    repo: "{{ iw_theme_git_repo }}"
+    version: "{{ iw_theme_git_version | default('master') }}"
+    dest: "{{ iw_theme_tmp_dir }}"
 
 - name: Install Special Theme Files
   copy:
-    src="{{ iw_theme_tmp_dir }}/siteworx/{{ item.src }}"
-    dest="{{ iw_homedir }}{{ item.dest }}"
-    remote_src="yes"
-    mode=0644
-    owner="{{ iw_unix_user }}"
-    group="{{ iw_unix_group }}"
+    src: "{{ iw_theme_tmp_dir }}/siteworx/{{ item.src }}"
+    dest: "{{ iw_homedir }}{{ item.dest }}"
+    remote_src: "yes"
+    mode: 0644
+    owner: "{{ iw_unix_user }}"
+    group: "{{ iw_unix_group }}"
   with_items:
     - { src: 'skel.html', dest: '/etc/skel/index.html' }
     - { src: 'disabled.html', dest: '/var/errors/disabled/index.html' }
@@ -22,8 +22,8 @@
 
 - name: Remove Special Theme Files
   file:
-    path="{{ iw_theme_tmp_dir }}/siteworx/{{ item }}"
-    state="absent"
+    path: "{{ iw_theme_tmp_dir }}/siteworx/{{ item }}"
+    state: "absent"
   with_items:
     - "overage.html"
     - "disabled.html"
@@ -31,15 +31,15 @@
 
 - name: Remove The Theme .git Dir
   file:
-    path="{{ iw_theme_tmp_dir }}/.git/"
-    state="absent"
+    path: "{{ iw_theme_tmp_dir }}/.git/"
+    state: "absent"
 
 - name: Zip Theme
   archive:
-    path="{{ iw_theme_tmp_dir }}/*"
-    dest="{{ iw_theme_tmp_dir }}.zip"
-    remove="yes"
-    format="zip"
+    path: "{{ iw_theme_tmp_dir }}/*"
+    dest: "{{ iw_theme_tmp_dir }}.zip"
+    remove: "yes"
+    format: "zip"
 
 - name: Install Theme
   command: >
@@ -63,5 +63,5 @@
 
 - name: Remove Tmp Theme
   file:
-    path="{{ iw_theme_tmp_dir }}.zip"
-    state="absent"
+    path: "{{ iw_theme_tmp_dir }}.zip"
+    state: "absent"

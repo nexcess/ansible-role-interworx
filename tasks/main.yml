@@ -2,7 +2,7 @@
 
 - name: Check Variables
   fail:
-    msg="iw_master_email, iw_master_password, and iw_license_key must all be defined when iw_activate_license is true"
+    msg: "iw_master_email, iw_master_password, and iw_license_key must all be defined when iw_activate_license is true"
   when:
     - iw_master_password == "" or iw_master_email == "" or iw_license_key == "" # noqa 602
     - iw_activate_license
@@ -13,15 +13,15 @@
 - name: Check if Interworx is Installed
   command: rpm -qi interworx
   register: iw_is_inst
-  changed_when: no
-  failed_when: no
+  changed_when: false
+  failed_when: false
   tags:
-    - skip_ansible_lint ## lint gets triggered b/c of using direct rpm command
+    - skip_ansible_lint  # lint gets triggered b/c of using direct rpm command
 
 - name: Fetch Interworx Installer
   get_url:
-    url={{ iw_install_script_url }}
-    dest={{ iw_install_script_loc }}
+    url: "{{ iw_install_script_url }}"
+    dest: "{{ iw_install_script_loc }}"
   when: iw_is_inst.rc != 0
 
 - name: Alter Interworx Installer Repo File URL
@@ -32,7 +32,7 @@
 
 - name: Install Interworx
   command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m {{ iw_mysql_ver }} -p {{ iw_php_ver }}
-  become: yes
+  become: true
   async: 1800
   register: iworx_install_result
   when:
@@ -53,35 +53,33 @@
 
 - name: Install Interworx CLI
   package:
-    name="interworx-cli"
-    state={{ iw_cli_pkg_state }}
+    name: "interworx-cli"
+    state: "{{ iw_cli_pkg_state }}"
 
 - name: Seed /etc/hosts With Correct License IP
   lineinfile:
-    path="/etc/hosts"
-    line="207.32.181.150 license.interworx.info license.interworx.com"
-    insertafter="EOF"
+    path: "/etc/hosts"
+    line: "207.32.181.150 license.interworx.info license.interworx.com"
+    insertafter: "EOF"
   when: not iw_skip_hosts_edit
 
 - name: Activate Interworx License
-  shell: >
+  command: >
     ~iworx/bin/goiworx.pex
     --key={{ iw_license_key }}
     --email={{ iw_master_email }}
     --password={{ iw_master_password }}
     --ignorechecks
-  become: yes
+  become: true
   failed_when: false
   register: goiworx_result
   when: (iw_is_inst.rc != 0 and iw_activate_license)
-  tags:
-    - skip_ansible_lint ## maybe this can be switched to command, but tbh didn't want to generate a license just to try
 
 - name: Remove Seed Line From /etc/hosts
   lineinfile:
-    state="absent"
-    path="/etc/hosts"
-    line="207.32.181.150 license.interworx.info license.interworx.com"
+    state: "absent"
+    path: "/etc/hosts"
+    line: "207.32.181.150 license.interworx.info license.interworx.com"
   when: not iw_skip_hosts_edit
 
 - name: Check Interworx License Activation Result
@@ -99,61 +97,61 @@
 
 - name: Remove Base PHP packages
   package:
-    name="{{ item }}"
-    state="absent"
+    name: "{{ item }}"
+    state: "absent"
   with_items: "{{ iw_symlink_base_php_packages }}"
   when: iw_symlink_base_php
 
 - name: Symlink Base PHP
   file:
-    src="{{ iw_symlink_base_php_path }}"
-    dest="/usr/bin/php"
-    owner="root"
-    group="root"
-    state="link"
+    src: "{{ iw_symlink_base_php_path }}"
+    dest: "/usr/bin/php"
+    owner: "root"
+    group: "root"
+    state: "link"
   when: iw_symlink_base_php
 
 - name: Accept Interworx EULA
   ini_file:
-    path="/home/interworx/iworx.ini"
-    section="iworx"
-    option="firstrun"
-    value="\"0\""
-    no_extra_spaces="yes"
+    path: "/home/interworx/iworx.ini"
+    section: "iworx"
+    option: "firstrun"
+    value: "\"0\""
+    no_extra_spaces: "yes"
   when:
     - iw_accept_eula
 
 - name: Set iworx.ini ns1
   ini_file:
-    path="/home/interworx/iworx.ini"
-    section="dns"
-    option="ns1"
-    value="\"{{ iw_ns1 }}\""
-    no_extra_spaces="yes"
+    path: "/home/interworx/iworx.ini"
+    section: "dns"
+    option: "ns1"
+    value: "\"{{ iw_ns1 }}\""
+    no_extra_spaces: "yes"
   when:
-    - iw_ns1 != "" # noqa 602
+    - iw_ns1 != ""  # noqa 602
     - iw_activate_license
 
 - name: Set iworx.ini ns2
   ini_file:
-    path="/home/interworx/iworx.ini"
-    section="dns"
-    option="ns2"
-    value="\"{{ iw_ns2 }}\""
-    no_extra_spaces="yes"
+    path: "/home/interworx/iworx.ini"
+    section: "dns"
+    option: "ns2"
+    value: "\"{{ iw_ns2 }}\""
+    no_extra_spaces: "yes"
   when:
-    - iw_ns2 != "" # noqa 602
+    - iw_ns2 != ""  # noqa 602
     - iw_activate_license
 
 - name: Set iworx.ini ns3
   ini_file:
-    path="/home/interworx/iworx.ini"
-    section="dns"
-    option="ns3"
-    value="\"{{ iw_ns3 }}\""
-    no_extra_spaces="yes"
+    path: "/home/interworx/iworx.ini"
+    section: "dns"
+    option: "ns3"
+    value: "\"{{ iw_ns3 }}\""
+    no_extra_spaces: "yes"
   when:
-    - iw_ns3 != "" # noqa 602
+    - iw_ns3 != ""  # noqa 602
     - iw_activate_license
 
 - name: Set Default NS
@@ -166,7 +164,7 @@
     --ns2="{{ iw_ns2 }}"
     --ns3="{{ iw_ns3 }}"
   when:
-    - iw_ns1 != "" or iw_ns2 != "" or iw_ns3 != "" # noqa 602
+    - iw_ns1 != "" or iw_ns2 != "" or iw_ns3 != ""  # noqa 602
     - iw_activate_license
 
 - name: Test Logging Into Interworx
@@ -216,7 +214,7 @@
 
 - include: theme.yml
   when:
-    - iw_theme_name != "" # noqa 602
-    - iw_theme_git_repo != "" # noqa 602
+    - iw_theme_name != ""  # noqa 602
+    - iw_theme_git_repo != ""  # noqa 602
     - iw_activate_license
   ignore_errors: true
