@@ -22,7 +22,6 @@ neutral='\033[0m'
 timestamp=$(date +%s)
 
 # Allow environment variables to override defaults.
-distro=${distro:-"centos7"}
 playbook=${playbook:-"test.yml"}
 cleanup=${cleanup:-"true"}
 container_id=${container_id:-$timestamp}
@@ -37,10 +36,7 @@ if [[ "$(docker images -q "${docker_image}:latest" 2> /dev/null)" == "" ]]; then
 fi
 
 ## Set up vars for Docker setup.
-# CentOS 7
-if [ $distro = 'centos7' ]; then
-  opts="--privileged --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443"
-fi
+opts="--privileged --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443"
 
 # Run the container using the supplied OS.
 printf ${green}"Starting Docker container: ${docker_image}"${neutral}"\n"
