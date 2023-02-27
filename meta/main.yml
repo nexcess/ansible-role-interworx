@@ -1,3 +1,4 @@
+---
 galaxy_info:
   role_name: interworx
   namespace: nexcess
@@ -5,7 +6,7 @@ galaxy_info:
   description: Interworx install role
   company: NEXCESS.NET (interworx)
   license: MIT
-  min_ansible_version: 2.0
+  min_ansible_version: "2.0"
   platforms:
     - name: EL
       versions:

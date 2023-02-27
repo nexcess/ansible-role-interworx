@@ -22,9 +22,7 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == system
 RUN yum makecache fast \
     && yum -y install deltarpm epel-release initscripts \
     && yum -y install sudo which git python python-pip openssh-server\
-    && yum -y update \
-    && yum clean all
-
+    && yum -y update
 
 ## install ansible and ansible-lint
 # pathlib is bundled with python 3 so packages no longer depend on it
