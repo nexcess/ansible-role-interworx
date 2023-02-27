@@ -3,7 +3,6 @@
 # Ansible role test shim.
 #
 # Usage: [OPTIONS] ./tests/test.sh
-#   - distro: a supported Docker distro version (default = "centos7")
 #   - playbook: a playbook in the tests directory (default = "test.yml")
 #   - cleanup: whether to remove the Docker container (default = true)
 #   - container_id: the --name to set for the container (default = timestamp)
@@ -19,12 +18,10 @@ red="$(tput setaf 1)"
 green="$(tput setaf 2)"
 neutral="$(tput sgr0)"
 
-timestamp=$(date +%s)
-
 # Allow environment variables to override defaults.
 playbook=${playbook:-"test.yml"}
 cleanup=${cleanup:-"true"}
-container_id=${container_id:-$timestamp}
+container_id=${container_id:-$(date +%s)}
 test_idempotence=${test_idempotence:-"true"}
 docker_image='nexcess/ansible-role-interworx'
 retval=0
