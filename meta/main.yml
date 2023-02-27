@@ -1,4 +1,6 @@
 galaxy_info:
+  role_name: interworx
+  namespace: nexcess
   author: Paul Oehler
   description: Interworx install role
   company: NEXCESS.NET (interworx)

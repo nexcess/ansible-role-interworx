@@ -14,9 +14,6 @@
 # Original work copyright Jeff Geerling
 # Modifications done by Stephen Dunne
 
-# Exit on any individual command failure.
-set -e
-
 # Pretty colors.
 red='\033[0;31m'
 green='\033[0;32m'
@@ -30,20 +27,38 @@ playbook=${playbook:-"test.yml"}
 cleanup=${cleanup:-"true"}
 container_id=${container_id:-$timestamp}
 test_idempotence=${test_idempotence:-"true"}
+docker_image='nexcess/ansible-role-interworx'
+retval=0
+
+## Build docker container
+if [[ "$(docker images -q "${docker_image}:latest" 2> /dev/null)" == "" ]]; then
+  printf "${green}Building Docker image: ${docker_image}${neutral}\n"
+  docker build -t "nexcess/ansible-role-interworx:latest" - < Dockerfile
+fi
 
 ## Set up vars for Docker setup.
 # CentOS 7
 if [ $distro = 'centos7' ]; then
-  opts="--tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443"
-# Ubuntu 16.04
-elif [ $distro = 'ubuntu1604' ]; then
-  opts="--tmpfs /tmp --tmpfs /run --tmpfs /run/lock --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443"
+  opts="--privileged --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443"
 fi
 
 # Run the container using the supplied OS.
-printf ${green}"Starting Docker container: sedunne/docker-$distro-ansible"${neutral}"\n"
-docker pull sedunne/docker-$distro-ansible:latest
-docker run --detach --volume="$PWD":/etc/ansible/roles/role_under_test:rw --name $container_id $opts sedunne/docker-$distro-ansible:latest
+printf ${green}"Starting Docker container: ${docker_image}"${neutral}"\n"
+docker run --detach --volume="$PWD":/etc/ansible/roles/role_under_test:rw --name $container_id $opts "${docker_image}:latest"
+
+# give systemd time to boot
+attempts=0
+printf "${green}Checking if systemd has booted...${neutral}\n"
+while ! docker exec "$container_id" systemctl list-units > /dev/null 2>&1; do
+  if (( $attempts > 5 )); then
+    printf "${red}Giving up waiting for systemd! Output below:${neutral}\n"
+    docker exec "$container_id" systemctl list-units
+    break
+  fi
+  printf "${green}Sleeping for 5 seconds...${neutral}\n"
+  sleep 5
+  attempts=$((attempts+1))
+done
 
 printf "\n"
 
@@ -68,10 +83,12 @@ if [ "$test_idempotence" = true ]; then
   printf ${green}"Running playbook again: idempotence test"${neutral}
   idempotence=$(mktemp)
   docker exec $container_id ansible-playbook /etc/ansible/roles/role_under_test/tests/$playbook | tee -a $idempotence
-  tail $idempotence \
-    | grep -q 'changed=0.*failed=0' \
-    && (printf ${green}'Idempotence test: pass'${neutral}"\n") \
-    || (printf ${red}'Idempotence test: fail'${neutral}"\n" && exit 1)
+  if tail $idempotence | grep -q 'changed=0.*failed=0'; then
+    printf ${green}'Idempotence test: pass'${neutral}"\n"
+  else
+    printf ${red}'Idempotence test: fail'${neutral}"\n"
+    retval=1
+  fi
 fi
 
 # Remove the Docker container (if configured).
@@ -79,3 +96,5 @@ if [ "$cleanup" = true ]; then
   printf "Removing Docker container...\n"
   docker rm -f $container_id
 fi
+
+exit "$retval"

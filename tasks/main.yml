@@ -4,7 +4,7 @@
   fail:
     msg="iw_master_email, iw_master_password, and iw_license_key must all be defined when iw_activate_license is true"
   when:
-    - iw_master_password == "" or iw_master_email == "" or iw_license_key == ""
+    - iw_master_password == "" or iw_master_email == "" or iw_license_key == "" # noqa 602
     - iw_activate_license
 
 ## the dumb change and failed options are b/c of how the interworx package gets installed.
@@ -25,13 +25,13 @@
   when: iw_is_inst.rc != 0
 
 - name: Alter Interworx Installer Repo File URL
-  shell: sed -i 's#https://updates.interworx.com/iworx/yum/interworx.repo-$iworxrepo#{{ iw_alt_repo_file_url }}#' {{ iw_install_script_loc }}
+  shell: sed -i 's#https://updates.interworx.com/iworx/yum/interworx.repo-$iworxrepo#{{ iw_alt_repo_file_url }}#' {{ iw_install_script_loc }} # noqa 303
   when:
     - iw_is_inst.rc != 0
-    - iw_use_alt_repo_file == true
+    - iw_use_alt_repo_file
 
 - name: Install Interworx
-  command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m system -p system
+  command: /bin/sh {{ iw_install_script_loc }} -l -r {{ iw_release_channel }} -m {{ iw_mysql_ver }} -p {{ iw_php_ver }}
   become: yes
   async: 1800
   register: iworx_install_result
@@ -39,8 +39,15 @@
     - iw_is_inst.rc != 0
 
 - name: Check Interworx Install Script Result
+  vars:
+    msg: |
+        iworx install return code: {{ iworx_install_result.rc }}
+        iworx install stdout:
+        {{ iworx_install_result.stdout }}
+        iworx install stderr:
+        {{ iworx_install_result.stderr }}
   debug:
-    var=iworx_install_result.stdout_lines
+    msg: "{{ msg.split('\n') }}"
   failed_when: iworx_install_result.rc != 0
   when: iw_is_inst.rc !=0
 
@@ -78,8 +85,15 @@
   when: not iw_skip_hosts_edit
 
 - name: Check Interworx License Activation Result
+  vars:
+    msg: |
+        goiworx return code: {{ goiworx_result.rc }}
+        goiworx stdout:
+        {{ goiworx_result.stdout }}
+        goiworx stderr:
+        {{ goiworx_result.stderr }}
   debug:
-    var=goiworx_result.stdout_lines
+    msg: "{{ msg.split('\n') }}"
   failed_when: true
   when: (iw_is_inst.rc != 0 and iw_activate_license and goiworx_result.rc != 0)
 
@@ -117,7 +131,7 @@
     value="\"{{ iw_ns1 }}\""
     no_extra_spaces="yes"
   when:
-    - iw_ns1 != ""
+    - iw_ns1 != "" # noqa 602
     - iw_activate_license
 
 - name: Set iworx.ini ns2
@@ -128,7 +142,7 @@
     value="\"{{ iw_ns2 }}\""
     no_extra_spaces="yes"
   when:
-    - iw_ns2 != ""
+    - iw_ns2 != "" # noqa 602
     - iw_activate_license
 
 - name: Set iworx.ini ns3
@@ -139,7 +153,7 @@
     value="\"{{ iw_ns3 }}\""
     no_extra_spaces="yes"
   when:
-    - iw_ns3 != ""
+    - iw_ns3 != "" # noqa 602
     - iw_activate_license
 
 - name: Set Default NS
@@ -152,7 +166,7 @@
     --ns2="{{ iw_ns2 }}"
     --ns3="{{ iw_ns3 }}"
   when:
-    - iw_ns1 != "" or iw_ns2 != "" or iw_ns3 != ""
+    - iw_ns1 != "" or iw_ns2 != "" or iw_ns3 != "" # noqa 602
     - iw_activate_license
 
 - name: Test Logging Into Interworx
@@ -165,6 +179,9 @@
       Content-Type: "application/x-www-form-urlencoded"
     validate_certs: "no"
   register: login
+  until: "login is not failed"
+  retries: 3
+  delay: 5
   when:
     - iw_activate_license
 
@@ -175,17 +192,31 @@
     headers:
       Cookie: "{{ login.set_cookie }}"
     validate_certs: "no"
+  register: login_step_2
+  until: "login_step_2 is not failed"
+  retries: 3
+  delay: 5
   when:
     - iw_activate_license
+
+- name: Check for existing API key
+  shell: >
+    nodeworx -un -c Apikey -a listApikey
+  changed_when: false
+  register: listapikey_result
+  tags:
+    - apikey
 
 - name: Generate API Key
   shell: >
     nodeworx -un -c Apikey -a generate
-  when: iw_generate_apikey
+  when: iw_generate_apikey and 'INTERWORX API KEY' not in listapikey_result.stdout
+  tags:
+    - apikey
 
 - include: theme.yml
   when:
-    - iw_theme_name != ""
-    - iw_theme_git_repo != ""
+    - iw_theme_name != "" # noqa 602
+    - iw_theme_git_repo != "" # noqa 602
     - iw_activate_license
   ignore_errors: true
