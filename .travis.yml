@@ -8,4 +8,5 @@ before_install:
   - docker build -t nexcess/ansible-role-interworx .
 
 script:
+  - shellcheck ${PWD}/tests/test.sh
   - ${PWD}/tests/test.sh

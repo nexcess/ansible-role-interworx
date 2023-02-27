@@ -15,9 +15,9 @@
 # Modifications done by Stephen Dunne
 
 # Pretty colors.
-red='\033[0;31m'
-green='\033[0;32m'
-neutral='\033[0m'
+red="$(tput setaf 1)"
+green="$(tput setaf 2)"
+neutral="$(tput sgr0)"
 
 timestamp=$(date +%s)
 
@@ -31,58 +31,57 @@ retval=0
 
 ## Build docker container
 if [[ "$(docker images -q "${docker_image}:latest" 2> /dev/null)" == "" ]]; then
-  printf "${green}Building Docker image: ${docker_image}${neutral}\n"
+  printf "%s\n" "${green}Building Docker image: ${docker_image}${neutral}"
   docker build -t "nexcess/ansible-role-interworx:latest" - < Dockerfile
 fi
 
 ## Set up vars for Docker setup.
-opts="--privileged --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443"
+opts=(--privileged --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443)
 
 # Run the container using the supplied OS.
-printf ${green}"Starting Docker container: ${docker_image}"${neutral}"\n"
-docker run --detach --volume="$PWD":/etc/ansible/roles/role_under_test:rw --name $container_id $opts "${docker_image}:latest"
+printf "%s\n" "${green}Starting Docker container: ${docker_image}${neutral}"
+docker run --detach --volume="$PWD":/etc/ansible/roles/role_under_test:rw --name "$container_id" "${opts[@]}" "${docker_image}:latest"
 
 # give systemd time to boot
 attempts=0
-printf "${green}Checking if systemd has booted...${neutral}\n"
+printf "%s\n" "${green}Checking if systemd has booted...${neutral}"
 while ! docker exec "$container_id" systemctl list-units > /dev/null 2>&1; do
-  if (( $attempts > 5 )); then
-    printf "${red}Giving up waiting for systemd! Output below:${neutral}\n"
+  if ((attempts > 5)); then
+    printf "%s\n" "${red}Giving up waiting for systemd! Output below:${neutral}"
     docker exec "$container_id" systemctl list-units
+    printf "\n"
     break
   fi
-  printf "${green}Sleeping for 5 seconds...${neutral}\n"
+  printf "%s\n" "${green}Sleeping for 5 seconds...${neutral}"
   sleep 5
-  attempts=$((attempts+1))
+  attempts=$((attempts + 1))
 done
 
-printf "\n"
-
-printf ${green}"Installing dependencies if needed..."${neutral}"\n"
-docker exec --tty $container_id env TERM=xterm /bin/bash -c 'cd /etc/ansible/roles/role_under_test/; python tests/deps.py'
-docker exec --tty $container_id env TERM=xterm /bin/bash -c 'if [ -e /etc/ansible/roles/role_under_test/tests/requirements.yml ]; then ansible-galaxy install -r /etc/ansible/roles/role_under_test/tests/requirements.yml; fi'
-
+printf "%s\n" "${green}Installing dependencies if needed...${neutral}"
+docker exec --tty "$container_id" env TERM=xterm /bin/bash -c 'cd /etc/ansible/roles/role_under_test/; python tests/deps.py'
+docker exec --tty "$container_id" env TERM=xterm /bin/bash -c 'if [ -e /etc/ansible/roles/role_under_test/tests/requirements.yml ]; then ansible-galaxy install -r /etc/ansible/roles/role_under_test/tests/requirements.yml; fi'
 printf "\n"
 
 ## Run Ansible Lint
-printf ${green}"Linting Ansible role/playbook."${neutral}"\n"
-docker exec --tty $container_id env TERM=xterm ansible-lint -v /etc/ansible/roles/role_under_test/
-
+printf "%s\n" "${green}Linting Ansible role/playbook.${neutral}"
+docker exec --tty "$container_id" env TERM=xterm ansible-lint -v /etc/ansible/roles/role_under_test/
 printf "\n"
 
 # Run Ansible playbook.
-printf ${green}"Running command: docker exec $container_id env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/$playbook"${neutral}
-docker exec $container_id env TERM=xterm env ANSIBLE_FORCE_COLOR=1 ansible-playbook /etc/ansible/roles/role_under_test/tests/$playbook
+printf "%s\n" "${green}Running command: docker exec $container_id env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/${playbook}${neutral}"
+docker exec "$container_id" env TERM=xterm env ANSIBLE_FORCE_COLOR=1 ansible-playbook "/etc/ansible/roles/role_under_test/tests/${playbook}"
+printf "\n"
 
 if [ "$test_idempotence" = true ]; then
   # Run Ansible playbook again (idempotence test).
-  printf ${green}"Running playbook again: idempotence test"${neutral}
+  printf "%s\n" "${green}Running playbook again: idempotence test${neutral}"
   idempotence=$(mktemp)
-  docker exec $container_id ansible-playbook /etc/ansible/roles/role_under_test/tests/$playbook | tee -a $idempotence
-  if tail $idempotence | grep -q 'changed=0.*failed=0'; then
-    printf ${green}'Idempotence test: pass'${neutral}"\n"
+  docker exec "$container_id" env TERM=xterm env ANSIBLE_FORCE_COLOR=1 ansible-playbook "/etc/ansible/roles/role_under_test/tests/${playbook}" | tee -a "${idempotence}"
+  printf "\n"
+  if tail "$idempotence" | grep -q 'changed=0.*failed=0'; then
+    printf "%s\n" "${green}Idempotence test: pass${neutral}"
   else
-    printf ${red}'Idempotence test: fail'${neutral}"\n"
+    printf "%s\n" "${red}Idempotence test: fail${neutral}"
     retval=1
   fi
 fi
@@ -90,7 +89,7 @@ fi
 # Remove the Docker container (if configured).
 if [ "$cleanup" = true ]; then
   printf "Removing Docker container...\n"
-  docker rm -f $container_id
+  docker rm -f "$container_id"
 fi
 
 exit "$retval"
