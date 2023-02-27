@@ -179,6 +179,9 @@
       Content-Type: "application/x-www-form-urlencoded"
     validate_certs: "no"
   register: login
+  until: "login is not failed"
+  retries: 3
+  delay: 5
   when:
     - iw_activate_license
 
@@ -189,6 +192,10 @@
     headers:
       Cookie: "{{ login.set_cookie }}"
     validate_certs: "no"
+  register: login_step_2
+  until: "login_step_2 is not failed"
+  retries: 3
+  delay: 5
   when:
     - iw_activate_license
 
