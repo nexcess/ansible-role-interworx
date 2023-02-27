@@ -1,8 +1,11 @@
 ---
+os: linux
+dist: jammy
+language: shell
 services: docker
 
-env:
-  - distro: centos7
+before_install:
+  - docker build -t nexcess/ansible-role-interworx .
 
 script:
   - ${PWD}/tests/test.sh
