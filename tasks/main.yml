@@ -56,13 +56,6 @@
     name: "interworx-cli"
     state: "{{ iw_cli_pkg_state }}"
 
-- name: Seed /etc/hosts With Correct License IP
-  lineinfile:
-    path: "/etc/hosts"
-    line: "207.32.181.150 license.interworx.info license.interworx.com"
-    insertafter: "EOF"
-  when: not iw_skip_hosts_edit
-
 - name: Activate Interworx License
   command: >
     ~iworx/bin/goiworx.pex
@@ -74,13 +67,6 @@
   failed_when: false
   register: goiworx_result
   when: (iw_is_inst.rc != 0 and iw_activate_license)
-
-- name: Remove Seed Line From /etc/hosts
-  lineinfile:
-    state: "absent"
-    path: "/etc/hosts"
-    line: "207.32.181.150 license.interworx.info license.interworx.com"
-  when: not iw_skip_hosts_edit
 
 - name: Check Interworx License Activation Result
   vars:
