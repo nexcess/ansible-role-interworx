@@ -55,10 +55,6 @@ iw_ssl_email: "ssl-anchor@no-reply.net"
 # Version of interworx-cli
 iw_cli_pkg_state: 'latest'
 
-## below is only used for testing in docker due to issues modifying hosts file
-## should always be false unless running inside docker
-iw_skip_hosts_edit: false
-
 ## if set to true, we symlink /usr/bin/php to where iw_symlink_base_php_path is
 iw_symlink_base_php: false
 iw_symlink_base_php_path: "/opt/remi/php56/root/usr/bin/php"
