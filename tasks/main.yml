@@ -200,6 +200,7 @@
 
 - include: theme.yml
   when:
+    - iw_use_custom_theme
     - iw_theme_name != ""  # noqa 602
     - iw_theme_git_repo != ""  # noqa 602
     - iw_activate_license
