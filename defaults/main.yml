@@ -39,6 +39,7 @@ iw_use_alt_repo_file: false
 iw_alt_repo_file_url: ""
 
 # Custom IWorx theme
+iw_use_custom_theme: false
 iw_theme_name: ""
 iw_theme_git_repo: ""
 iw_theme_git_version: ""
