@@ -2,7 +2,12 @@ FROM --platform=linux/amd64 centos:7
 ENV ANSIBLE_VERSION="2.9.27"
 ENV ANSIBLE_LINT_VERSION="4.2.0"
 ENV container=docker
-WORKDIR /etc/ansible 
+WORKDIR /etc/ansible
+
+# CentOS 7 reached EOL on 2024-06-30 and the public mirrors return 410 Gone.
+# Point base/updates/extras at vault.centos.org so yum still resolves packages.
+RUN sed -i 's/mirrorlist=/#mirrorlist=/g' /etc/yum.repos.d/CentOS-*.repo \
+ && sed -i 's|#baseurl=http://mirror.centos.org|baseurl=https://vault.centos.org|g' /etc/yum.repos.d/CentOS-*.repo
 
 # for details on running systemd in a centos container, see:
 #  https://hub.docker.com/_/centos/
@@ -21,7 +26,9 @@ RUN (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == system
 # iworx default proftpd config expects to exist and other things probably do too
 RUN yum makecache fast \
     && yum -y install deltarpm epel-release initscripts \
-    && yum -y install sudo which git python python-pip openssh-server\
+    && sed -i 's|^metalink=|#metalink=|g' /etc/yum.repos.d/epel*.repo \
+    && sed -i 's|^#baseurl=http://download.fedoraproject.org/pub/epel|baseurl=https://archives.fedoraproject.org/pub/archive/epel|g' /etc/yum.repos.d/epel*.repo \
+    && yum -y install sudo which git python python-pip openssh-server \
     && yum -y update
 
 ## install ansible and ansible-lint

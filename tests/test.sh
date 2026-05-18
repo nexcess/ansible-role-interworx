@@ -33,7 +33,9 @@ if [[ "$(docker images -q "${docker_image}:latest" 2> /dev/null)" == "" ]]; then
 fi
 
 ## Set up vars for Docker setup.
-opts=(--privileged --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro --security-opt seccomp=unconfined -p 2443:2443)
+# cgroup mount must be rw and the namespace shared with the host so that
+# CentOS 7's systemd can manage cgroups properly on a cgroups v2 host.
+opts=(--privileged --cgroupns=host --tmpfs /tmp --tmpfs /run --volume=/sys/fs/cgroup:/sys/fs/cgroup:rw --security-opt seccomp=unconfined -p 2443:2443)
 
 # Run the container using the supplied OS.
 printf "%s\n" "${green}Starting Docker container: ${docker_image}${neutral}"
@@ -44,10 +46,14 @@ attempts=0
 printf "%s\n" "${green}Checking if systemd has booted...${neutral}"
 while ! docker exec "$container_id" systemctl list-units > /dev/null 2>&1; do
   if ((attempts > 5)); then
-    printf "%s\n" "${red}Giving up waiting for systemd! Output below:${neutral}"
-    docker exec "$container_id" systemctl list-units
-    printf "\n"
-    break
+    printf "%s\n" "${red}systemd never came up after $((attempts * 5))s; aborting.${neutral}"
+    docker exec "$container_id" systemctl list-units || true
+    docker exec "$container_id" ps -ef || true
+    docker logs "$container_id" || true
+    if [ "$cleanup" = true ]; then
+      docker rm -f "$container_id" >/dev/null 2>&1 || true
+    fi
+    exit 1
   fi
   printf "%s\n" "${green}Sleeping for 5 seconds...${neutral}"
   sleep 5
@@ -64,9 +70,55 @@ printf "%s\n" "${green}Linting Ansible role/playbook.${neutral}"
 docker exec --tty "$container_id" env TERM=xterm ansible-lint -v /etc/ansible/roles/role_under_test/
 printf "\n"
 
+# Dump interworx logs and key service status so failures aren't a black box.
+# InterWorx runs its own apache instance separate from the system httpd; its
+# logs live under /usr/local/interworx/var/log/.
+dump_diagnostics() {
+  printf "%s\n" "${red}Dumping diagnostic logs from container...${neutral}"
+  docker exec "$container_id" bash -c '
+    for f in /usr/local/interworx/var/log/iworx.log /usr/local/interworx/var/log/error.log; do
+      if [ -f "$f" ]; then
+        echo "=== $f (tail) ==="
+        tail -200 "$f"
+        echo
+      fi
+    done
+    echo "=== systemctl list-units (key iworx services) ==="
+    systemctl --no-pager --no-legend list-units "iworx*" "*mysql*" 2>&1 || true
+    echo
+    for svc in iworx iworxphp72-php-fpm; do
+      echo "=== systemctl status -l $svc ==="
+      systemctl status -l --no-pager "$svc" 2>&1 || true
+      echo
+      echo "=== journalctl -u $svc (last 100 lines) ==="
+      journalctl --no-pager -u "$svc" -n 100 2>&1 || true
+      echo
+    done
+    echo "=== iworx-horde investigation ==="
+    echo "--- ls /usr/local/interworx/etc/php-fpm.d/ ---"
+    ls -la /usr/local/interworx/etc/php-fpm.d/ 2>&1 || true
+    echo "--- ls /usr/local/interworx/var/run/ ---"
+    ls -la /usr/local/interworx/var/run/ 2>&1 || true
+    echo "--- getent passwd | grep -i iworx ---"
+    getent passwd | grep -i iworx || true
+    echo "--- iworx-horde pool config ---"
+    for f in /usr/local/interworx/etc/php-fpm.d/*horde*.conf; do
+      [ -f "$f" ] && { echo "### $f ###"; cat "$f"; }
+    done
+    echo "--- rpm -qa | grep -i horde ---"
+    rpm -qa | grep -i horde || echo "(no horde packages installed)"
+    echo
+    echo "=== ps -ef ==="
+    ps -ef
+  ' || true
+}
+
 # Run Ansible playbook.
 printf "%s\n" "${green}Running command: docker exec $container_id env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/${playbook}${neutral}"
-docker exec "$container_id" env TERM=xterm env ANSIBLE_FORCE_COLOR=1 ansible-playbook "/etc/ansible/roles/role_under_test/tests/${playbook}"
+if ! docker exec "$container_id" env TERM=xterm env ANSIBLE_FORCE_COLOR=1 ansible-playbook "/etc/ansible/roles/role_under_test/tests/${playbook}"; then
+  dump_diagnostics
+  retval=1
+fi
 printf "\n"
 
 if [ "$test_idempotence" = true ]; then
