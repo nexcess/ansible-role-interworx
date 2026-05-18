@@ -153,6 +153,38 @@
     - iw_ns1 != "" or iw_ns2 != "" or iw_ns3 != ""  # noqa 602
     - iw_activate_license
 
+- name: Recover iworx services after install
+  # The installer kicks off iworxphp*-php-fpm before it finishes creating the
+  # iworx-horde user and the /usr/local/interworx/var/run/ directory, so the
+  # first start attempts fail and systemd hits its restart limit. Reset the
+  # failed state and restart now that the install has finished provisioning.
+  when:
+    - iw_is_inst.rc != 0
+  block:
+    - name: Reset failed state on iworx services
+      command: "systemctl reset-failed {{ item }}"
+      loop:
+        - iworx.service
+        - iworxphp72-php-fpm.service
+      changed_when: false
+      failed_when: false
+      tags:
+        - skip_ansible_lint
+
+    - name: Restart iworx services
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - iworx.service
+        - iworxphp72-php-fpm.service
+
+    - name: Wait for nodeworx FastCGI socket
+      wait_for:
+        path: /home/interworx/var/run/iworx-web.sock
+        state: present
+        timeout: 60
+
 - name: Test Logging Into Interworx
   uri:
     url: "https://{{ ansible_default_ipv4.address }}:2443/nodeworx/?action=login"
