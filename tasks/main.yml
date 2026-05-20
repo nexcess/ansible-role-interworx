@@ -163,14 +163,31 @@
   # iworx-horde user and the /usr/local/interworx/var/run/ directory, so the
   # first start attempts fail and systemd hits its restart limit. Reset the
   # failed state and restart now that the install has finished provisioning.
+  # InterWorx 6.x ships php 7.2 as the bundled FPM; 8.x switched to php 8.2.
   when:
     - iw_is_inst.rc != 0
   block:
+    - name: Detect installed Interworx version
+      command: rpm -q --queryformat '%{VERSION}' interworx
+      register: iworx_installed_version
+      changed_when: false
+      tags:
+        - skip_ansible_lint
+
+    - name: Determine bundled php-fpm service name
+      set_fact:
+        iworx_php_fpm_service: >-
+          {{
+            'iworxphp82-php-fpm.service'
+            if iworx_installed_version.stdout is version('8.0.0', '>=')
+            else 'iworxphp72-php-fpm.service'
+          }}
+
     - name: Reset failed state on iworx services
       command: "systemctl reset-failed {{ item }}"
       loop:
         - iworx.service
-        - iworxphp72-php-fpm.service
+        - "{{ iworx_php_fpm_service }}"
       changed_when: false
       failed_when: false
       tags:
@@ -182,7 +199,7 @@
         state: restarted
       loop:
         - iworx.service
-        - iworxphp72-php-fpm.service
+        - "{{ iworx_php_fpm_service }}"
 
     - name: Wait for nodeworx FastCGI socket
       wait_for:
