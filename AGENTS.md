@@ -37,7 +37,7 @@ defaults/
 handlers/
   main.yml             # empty scaffolding
 meta/
-  main.yml             # galaxy metadata; declares EL 6/7 (EL6 is stale), no dependencies
+  main.yml             # galaxy metadata; declares EL7 only, no dependencies
 ref/
   ansible-29-constraints.md  # what the pinned toolchain forbids; lint-suppression inventory
   test-harness.md      # how tests/test.sh works, its env vars, and its traps

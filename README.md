@@ -13,10 +13,9 @@ For architecture, the task-by-task install flow, and test/lint commands, see
 
 ## Requirements
 
-- **EL7.** `meta/main.yml` still declares EL 6 and 7, but the post-install service-recovery block
-  uses `systemctl` and the `systemd` module, so EL6 is stale metadata. CI (Travis) exercises EL7
-  only, in a CentOS 7 container.
-- **systemd**, and outbound access to `updates.interworx.com`.
+- **EL7 with systemd.** The post-install service-recovery block uses `systemctl` and the `systemd`
+  module. CI (Travis) exercises EL7 only, in a CentOS 7 container.
+- **Outbound access to `updates.interworx.com`.**
 - **A root connection.** Only two tasks set `become: true`; the rest assume they are already
   privileged. Run the role as root or with `become: true` at play level.
 - **Fact gathering and a default IPv4 route on the target.** The verification runs `uri` on the
