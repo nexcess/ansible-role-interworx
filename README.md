@@ -130,6 +130,12 @@ before your first run.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Spec-driven development
+
+This repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-driven
+development. PRs need an OpenSpec change under `openspec/changes/`, or an
+`sdd-exception: <reason>` line in the PR description.
+
 ## License
 
 MIT
