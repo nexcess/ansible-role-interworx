@@ -55,3 +55,4 @@ container has not been tested. -->
 - [ ] New variables are declared in `defaults/main.yml` and documented in `README.md`
 - [ ] Docs updated (`README.md`/`AGENTS.md`) if this changes how the role is used, built, or tested
 - [ ] No secrets, tokens, license keys, or real customer data included
+- [ ] Includes an OpenSpec change under openspec/changes/, or the description has an sdd-exception: <reason> line near the top

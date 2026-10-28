@@ -30,3 +30,9 @@ was verified.
 - [ ] `shellcheck tests/test.sh` passes
 - [ ] Any new variable is `iw_`-prefixed, has a default in `defaults/main.yml`, and has a row in `README.md`
 - [ ] Docs (`README.md`/`AGENTS.md`) updated if this changes how the role is built, run, or used
+
+## Spec-driven development
+
+This repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-driven
+development. PRs need an OpenSpec change under `openspec/changes/`, or an
+`sdd-exception: <reason>` line in the PR description.

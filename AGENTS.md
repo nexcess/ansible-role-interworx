@@ -176,6 +176,12 @@ reuses a stale image rather than rebuilding it.
 - **`iw_ssl_email` is dead.** Defined in `defaults/main.yml`, referenced nowhere — a leftover from
   the ssl-services task removed in NSO-1637.
 
+## Spec-driven development
+
+This repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec) for spec-driven
+development. PRs need an OpenSpec change under `openspec/changes/`, or an
+`sdd-exception: <reason>` line in the PR description.
+
 ## See also
 
 - [README.md](README.md) — full role-variable reference, requirements, example playbook
