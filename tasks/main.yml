@@ -65,6 +65,8 @@
   package:
     name: https://imirror.us-midwest-1.nexcess.net/nexcess-kickstart/interworx-internal-license-1.0-4.noarch.rpm
     state: present
+    # The RPM ships unsigned (no RSA/DSA/PGP header), so dnf's gpgcheck rejects it on EL8+.
+    disable_gpg_check: true
 
 - name: Activate Interworx License
   command: >
