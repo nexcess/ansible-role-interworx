@@ -61,6 +61,11 @@
     name: "interworx-cli"
     state: "{{ iw_cli_pkg_state }}"
 
+- name: Install Interworx Internal License
+  package:
+    name: https://imirror.us-midwest-1.nexcess.net/nexcess-kickstart/interworx-internal-license-1.0-4.noarch.rpm
+    state: present
+
 - name: Activate Interworx License
   command: >
     ~iworx/bin/goiworx.pex

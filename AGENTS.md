@@ -66,7 +66,8 @@ flowchart TD
     G --> K
     B -->|installed| K["Remove installer's MariaDB.repo<br/>(no guard, always runs)"]
     K --> L[Install interworx-cli]
-    L --> M{iw_activate_license<br/>and fresh install}
+    L --> L2["Install interworx-internal-license RPM<br/>(no guard, always runs)"]
+    L2 --> M{iw_activate_license<br/>and fresh install}
     M -->|true| N[goiworx.pex activate]
     N --> N2[Fail the play if goiworx rc != 0]
     N2 --> O
